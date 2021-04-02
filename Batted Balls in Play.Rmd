@@ -1,0 +1,75 @@
+---
+title: "Batted Balls in Play"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+require(dplyr)
+require(stringr)
+require(randomForest)
+require(corrplot)
+require(ggplot2)
+library(dplyr)
+library(stringr)
+library(randomForest)
+library(corrplot)
+library(ggplot2)
+```
+
+```{r}
+url <- "https://raw.githubusercontent.com/Chrisboatto/Batted-Balls-In-Play/main/Pitching%20Stats.csv"
+```
+
+```{r}
+pitchingStats <- read.csv(url)
+```
+
+```{r}
+str(pitchingStats)
+```
+
+```{r}
+summary(pitchingStats)
+```
+
+```{r}
+sum(is.na(pitchingStats))
+```
+
+```{r}
+pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.))
+```
+
+```{r}
+sum(is.na(pitchingStats))
+```
+
+```{r}
+pitchingStatsCor <- cor(pitchingStats[17:39])
+corrplot(pitchingStatsCor, type = "upper", order = 'hclust', tl.col = 'red')
+```
+
+```{r}
+ggplot(pitchingStats) + 
+  geom_density(aes(x = FB, fill = "FB", alpha = 0.8)) +
+  geom_density(aes(x = SO, fill = "SO", alpha = 0.8)) +
+  geom_density(aes(x = LD, fill = "LD", alpha = 0.8)) +
+  geom_density(aes(x = GB, fill = "GB", alpha = 0.8)) +
+  labs(title = "Outs Density Plot", subtitle = "2019 Season", x = "Out", y = "Density") +
+  theme(panel.background = element_blank(), axis.line =  element_line(color = "black"))
+```
+
+```{r}
+
+```
+
