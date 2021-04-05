@@ -47,7 +47,7 @@ sum(is.na(pitchingStats))
 ```
 
 ```{r}
-pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.))
+pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.)) %>% filter(IP > 100)
 ```
 
 ```{r}
@@ -65,11 +65,22 @@ ggplot(pitchingStats) +
   geom_density(aes(x = SO, fill = "SO", alpha = 0.8)) +
   geom_density(aes(x = LD, fill = "LD", alpha = 0.8)) +
   geom_density(aes(x = GB, fill = "GB", alpha = 0.8)) +
-  labs(title = "Outs Density Plot", subtitle = "2019 Season", x = "Out", y = "Density") +
+  labs(title = "Batted Ball Density Plot", subtitle = "2019 Season", x = "Batted Ball", y = "Density") +
   theme(panel.background = element_blank(), axis.line =  element_line(color = "black"))
 ```
 
 ```{r}
-
+ggplot(pitchingStats) +
+  geom_point(aes(x = SO, y = ERA, colour = 'Strikeout'), size = 1) + 
+  geom_point(aes(x = GB, y = ERA, colour = 'Ground ball'), size = 1) + 
+  geom_point(aes(x = LD, y = ERA, colour = 'Line Drive'), size = 1) +
+  geom_point(aes(x = FB, y = ERA, colour = 'Fly Ball'), size = 1) +
+  geom_smooth(aes(x = SO, y = ERA), method = "auto", level = 0.9, colour = "purple") + 
+  geom_smooth(aes(x = GB, y = ERA), method = "auto", level = 0.9, colour = "green") + 
+  geom_smooth(aes(x = LD, y = ERA), method = "auto", level = 0.9, colour = "blue") +
+  geom_smooth(aes(x = FB, y = ERA), method = "auto", level = 0.9, colour = "red") +
+  labs(title = "Batted Balls to ERA Correlation", subtitle = "2019 MLB Season (100ip min)", x = "Number of Batted Balls", y = "ERA", colour = "Batted Balls")
+  
+  
 ```
 
