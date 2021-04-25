@@ -47,7 +47,14 @@ sum(is.na(pitchingStats))
 ```
 
 ```{r}
-pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.)) %>% filter(IP > 100)
+pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.)) %>% filter(IP > 100) %>% select(-c(Dollars, playerid))
+```
+
+```{r}
+pitchingStats$LOB. <- as.numeric(sub("%", "", pitchingStats$LOB.))/100
+pitchingStats$GB. <- as.numeric(sub("%", "", pitchingStats$GB.))/100
+pitchingStats$HR.FB <- as.numeric(sub("%", "", pitchingStats$HR.FB))/100
+pitchingStats <- rename(pitchingStats, Name = ï..Name)
 ```
 
 ```{r}
@@ -77,10 +84,84 @@ ggplot(pitchingStats) +
   geom_point(aes(x = FB, y = ERA, colour = 'Fly Ball'), size = 1) +
   geom_smooth(aes(x = SO, y = ERA), method = "auto", level = 0.9, colour = "purple") + 
   geom_smooth(aes(x = GB, y = ERA), method = "auto", level = 0.9, colour = "green") + 
-  geom_smooth(aes(x = LD, y = ERA), method = "auto", level = 0.9, colour = "blue") +
+  geom_smooth(aes(x = LD, y = ERA), method = "auto", level = 0.9, colour = "royal blue") +
   geom_smooth(aes(x = FB, y = ERA), method = "auto", level = 0.9, colour = "red") +
   labs(title = "Batted Balls to ERA Correlation", subtitle = "2019 MLB Season (100ip min)", x = "Number of Batted Balls", y = "ERA", colour = "Batted Balls")
   
   
+```
+
+```{r}
+set.seed(118916)
+train <- sample(nrow(pitchingStats), 0.80*nrow(pitchingStats), replace = FALSE)
+train_set <- pitchingStats[train,]
+test_set <- pitchingStats[-train,]
+```
+
+```{r}
+model <- randomForest(ERA ~ ., data = train_set, ntree = 50)
+```
+
+```{r}
+baseImp <- importance(model)
+baseImp
+```
+
+```{r}
+baseImp <- as.data.frame(baseImp)
+ggplot(baseImp, aes(IncNodePurity, row.names(baseImp))) + 
+  geom_bar(stat = "identity", width = 0.1, fill = "black") + 
+  geom_point(shape = 21, size = 3, colour = "black", fill = "green", stroke = 2) + 
+  labs(title = "ERA Importance", x = "Importance", y = "Variable")
+```
+
+```{r}
+plot(model, col = 'orange', main = 'Base Model Error')
+```
+
+```{r}
+newModel <- randomForest(ERA ~ SO + FB + GB + LD + H + HR + BB, data = train_set, ntree = 50)
+```
+
+```{r}
+ERA_train <- predict(newModel, train_set, type = "response")
+ERA_test <- predict(newModel, test_set, type = "response")
+```
+
+```{r}
+train_set <- cbind(train_set, ERA_train)
+test_set <- cbind(test_set, ERA_test)
+```
+
+```{r}
+names(train_set)[names(train_set) == "ERA_train"] <- "ERAPred"
+names(test_set)[names(test_set) == "ERA_test"] <- "ERAPred"
+```
+
+```{r}
+ERA_Full <- rbind(train_set, test_set)
+```
+
+```{r}
+plot(newModel, col = "orange", main = "New Model Error Chart")
+```
+
+```{r}
+newImp <- importance(newModel)
+newImp
+
+newImp <- as.data.frame(newImp)
+ggplot(newImp, aes(IncNodePurity, row.names(newImp))) + 
+  geom_bar(stat = "identity", width = 0.1, fill = "black") + 
+  geom_point(shape = 21, size = 3, colour = "black", fill = "green", stroke = 2) + 
+  labs(title = "ERA Importance", x = "Importance", y = "Variable")
+```
+
+```{r}
+ERA_Full_1 <- ERA_Full %>% mutate(ERA_Diff = ERAPred - ERA) %>% select(c(Name, ERA, ERAPred, ERA_Diff, SO, GB, FB, LD, BB, H, HR))
+```
+
+```{r}
+ERA_Full_1[order(ERA_Full_1$ERA_Diff),]
 ```
 
