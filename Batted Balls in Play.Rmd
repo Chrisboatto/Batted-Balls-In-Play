@@ -16,12 +16,12 @@ When you click the **Knit** button a document will be generated that includes bo
 ```{r}
 require(dplyr)
 require(stringr)
-require(randomForest)
+require(rpart)
 require(corrplot)
 require(ggplot2)
 library(dplyr)
 library(stringr)
-library(randomForest)
+library(rpart)
 library(corrplot)
 library(ggplot2)
 ```
@@ -47,7 +47,7 @@ sum(is.na(pitchingStats))
 ```
 
 ```{r}
-pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.)) %>% filter(IP > 100) %>% select(-c(Dollars, playerid))
+pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.)) %>% filter(IP > 100) %>% select(-c(Dollars, playerid)) %>% mutate(BinaryPitching = case_when(ERA < 4.30 ~ 1, ERA > 4.29 ~ 0))
 ```
 
 ```{r}
@@ -99,33 +99,29 @@ test_set <- pitchingStats[-train,]
 ```
 
 ```{r}
-model <- randomForest(ERA ~ ., data = train_set, ntree = 50)
+model <- rpart(BinaryPitching ~ ., data = train_set, method = 'class')
 ```
 
 ```{r}
-baseImp <- importance(model)
+baseImp <- varImp(model)
 baseImp
 ```
 
 ```{r}
 baseImp <- as.data.frame(baseImp)
-ggplot(baseImp, aes(IncNodePurity, row.names(baseImp))) + 
+ggplot(baseImp, aes(Overall, row.names(baseImp))) + 
   geom_bar(stat = "identity", width = 0.1, fill = "black") + 
   geom_point(shape = 21, size = 3, colour = "black", fill = "green", stroke = 2) + 
   labs(title = "ERA Importance", x = "Importance", y = "Variable")
 ```
 
 ```{r}
-plot(model, col = 'orange', main = 'Base Model Error')
+newModel <- rpart(BinaryPitching ~ SO + FB + GB + LD + H + HR + BB + Strikes + BU + BUH, data = train_set, method = 'class')
 ```
 
 ```{r}
-newModel <- randomForest(ERA ~ SO + FB + GB + LD + H + HR + BB, data = train_set, ntree = 50)
-```
-
-```{r}
-ERA_train <- predict(newModel, train_set, type = "response")
-ERA_test <- predict(newModel, test_set, type = "response")
+ERA_train <- predict(newModel, train_set, type = 'vector')
+ERA_test <- predict(newModel, test_set, type = "vector")
 ```
 
 ```{r}
@@ -134,31 +130,35 @@ test_set <- cbind(test_set, ERA_test)
 ```
 
 ```{r}
-names(train_set)[names(train_set) == "ERA_train"] <- "ERAPred"
-names(test_set)[names(test_set) == "ERA_test"] <- "ERAPred"
+names(train_set)[names(train_set) == "ERA_train"] <- "PitchPred"
+names(test_set)[names(test_set) == "ERA_test"] <- "PitchPred"
 ```
 
 ```{r}
-ERA_Full <- rbind(train_set, test_set)
+PitchFull <- rbind(train_set, test_set)
 ```
 
 ```{r}
-plot(newModel, col = "orange", main = "New Model Error Chart")
-```
-
-```{r}
-newImp <- importance(newModel)
+newImp <- varImp(newModel)
 newImp
 
 newImp <- as.data.frame(newImp)
-ggplot(newImp, aes(IncNodePurity, row.names(newImp))) + 
+ggplot(newImp, aes(Overall, row.names(newImp))) + 
   geom_bar(stat = "identity", width = 0.1, fill = "black") + 
   geom_point(shape = 21, size = 3, colour = "black", fill = "green", stroke = 2) + 
   labs(title = "ERA Importance", x = "Importance", y = "Variable")
 ```
 
 ```{r}
-ERA_Full_1 <- ERA_Full %>% mutate(ERA_Diff = ERAPred - ERA) %>% select(c(Name, ERA, ERAPred, ERA_Diff, SO, GB, FB, LD, BB, H, HR))
+roc_test <- roc(ifelse(test_set$BinaryPitching == "1", "1", "0"), as.numeric(test_set$PitchPred))
+roc_train <- roc(ifelse(train_set$BinaryPitching == "1", "1", "0"), as.numeric(train_set$PitchPred))
+plot(roc_test, col = "blue", main = "Pitching ROC Graph")
+lines(roc_train, col = "green")
+```
+
+
+```{r}
+ERA_Full_1 <- ERA_Full %>% mutate(ERA_Diff = ERA - ERAPred) %>% select(c(Name, BinaryPitching, ERA, ERAPred, ERA_Diff, SO, GB, FB, LD, BB, H, HR))
 ```
 
 ```{r}
