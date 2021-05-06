@@ -13,6 +13,13 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
+# The following project looks to determine what type of out (strike out, fly out, ground out, line out) is correlated to Earned Run Average (ERA) for pitchers. The pitcher's job is to get batters out at a high rate without giving up runs. Pitchers with lower ERA's are in high demand and get paid well when they hit free agency. Does it matter how the batter gets out or is there a type of out that is best suited to keep runs off the scoreboard.
+
+# ERA is determined by the following formula: Earned Runs (ER) / Innings pitched (IP) * 9. And earned run is defined as any run that scores against a pitcher without the benefit of an error or a passed ball. Often, it is the judgment of the official scorer as to whether a specific run would've scored without the defensive mishap. Therefore runs that score with defensive mishaps will not be counted against the pitcher because he had no effect on the run scoring. 
+
+
+# THe following are the packages used to complete this assignment.
+
 ```{r}
 require(dplyr)
 require(stringr)
@@ -26,6 +33,8 @@ library(corrplot)
 library(ggplot2)
 ```
 
+# I downloaded the data set off my GitHub profile into RStudio.
+
 ```{r}
 url <- "https://raw.githubusercontent.com/Chrisboatto/Batted-Balls-In-Play/main/Pitching%20Stats.csv"
 ```
@@ -33,6 +42,8 @@ url <- "https://raw.githubusercontent.com/Chrisboatto/Batted-Balls-In-Play/main/
 ```{r}
 pitchingStats <- read.csv(url)
 ```
+
+# I checked the structure and summary of the data set. The data seemed to be pretty clean throughout with only 23 NA values.
 
 ```{r}
 str(pitchingStats)
@@ -45,6 +56,10 @@ summary(pitchingStats)
 ```{r}
 sum(is.na(pitchingStats))
 ```
+
+# I cleaned the data by removing NA values and any amount of innings under 100 to remove a small sample size bias. I then transformed the percentage based columns into decimal columns to ensure their value remained while making them numeric. I then renamed a column for simplicity.
+
+# I also created the BinaryPitching column where anything below the average received a score of 0 and above recieved a 1.
 
 ```{r}
 pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.)) %>% filter(IP > 100) %>% select(-c(Dollars, playerid)) %>% mutate(BinaryPitching = case_when(ERA < 4.30 ~ 1, ERA > 4.29 ~ 0))
@@ -60,11 +75,14 @@ pitchingStats <- rename(pitchingStats, Name = ï..Name)
 ```{r}
 sum(is.na(pitchingStats))
 ```
+# The correlation plot below shows how well everything correlates to each other. Blue is positive and red is negative.
 
 ```{r}
 pitchingStatsCor <- cor(pitchingStats[17:39])
 corrplot(pitchingStatsCor, type = "upper", order = 'hclust', tl.col = 'red')
 ```
+
+# The Density plot below shows the popularity of occurences of each out within the 2019 season. As you ca nsee line drives spiked early which makes sense because most line drives end up as hits. Near the tail end of the graph you can see how strike outs become more prevalent. 
 
 ```{r}
 ggplot(pitchingStats) + 
@@ -75,6 +93,8 @@ ggplot(pitchingStats) +
   labs(title = "Batted Ball Density Plot", subtitle = "2019 Season", x = "Batted Ball", y = "Density") +
   theme(panel.background = element_blank(), axis.line =  element_line(color = "black"))
 ```
+
+# The below scatter plot shows the relationship between the outs and pitchers' ERA. The more strikeouts a pitcher gets the lower the ERA. Seems to show that avoiding contact is the best way to lower your ERA. This would explain the increase in strike outs.
 
 ```{r}
 ggplot(pitchingStats) +
@@ -89,6 +109,8 @@ ggplot(pitchingStats) +
   labs(title = "Batted Balls to ERA Correlation", subtitle = "2019 MLB Season (100ip min)", x = "Number of Batted Balls", y = "ERA", colour = "Batted Balls")
 ```
 
+# I split the train and test data sets on an 80:20 scale train:test.
+
 ```{r}
 set.seed(118916)
 train <- sample(nrow(pitchingStats), 0.80*nrow(pitchingStats), replace = FALSE)
@@ -96,9 +118,13 @@ train_set <- pitchingStats[train,]
 test_set <- pitchingStats[-train,]
 ```
 
+# I then created a base decision tree model to determine the Overall importance scores for each atrribute in the data set. I chose a decision tree because the data set is rather small so a simpler method of predicting would suffice.
+
 ```{r}
 model <- rpart(BinaryPitching ~ ., data = train_set, method = 'class')
 ```
+
+# As you can see below ERA and xERA were two of the five major contributors to the model. This would make sense as above the BinaryPitching category was created based on the ERA attribute.
 
 ```{r}
 baseImp <- varImp(model)
@@ -112,6 +138,10 @@ ggplot(baseImp, aes(Overall, row.names(baseImp))) +
   geom_point(shape = 21, size = 3, colour = "black", fill = "green", stroke = 2) + 
   labs(title = "ERA Importance", x = "Importance", y = "Variable")
 ```
+
+# I then created the new decision tree removing the highest scoring attributes above and removing other attributes that I did not think were pertinent to the experiment. I then predicted the scores using the 'vector' method to receive a score for each outcome rather than have a number assigned to it.
+
+# I then bound the prediction to the train and test data sets as a seperate column, renamed them to match and bound the data sets together.
 
 ```{r}
 newModel <- rpart(BinaryPitching ~ SO + FB + GB + LD + H + HR + BB + Strikes + BU + BUH, data = train_set, method = 'class')
@@ -136,6 +166,8 @@ names(test_set)[names(test_set) == "ERA_test"] <- "PitchPred"
 PitchFull <- rbind(train_set, test_set)
 ```
 
+# The new importance model shows a much more balanced model that used almost every attribute entered into it. 
+
 ```{r}
 newImp <- varImp(newModel)
 newImp
@@ -147,6 +179,8 @@ ggplot(newImp, aes(Overall, row.names(newImp))) +
   labs(title = "ERA Importance", x = "Importance", y = "Variable")
 ```
 
+# The Receiver Operator Characteristic Graph shows how well the model did at predicting. Although you would rather see a gradual curve on the chart, this still shows that the model predicted well with no under or over fitting.
+
 ```{r}
 roc_test <- roc(ifelse(test_set$BinaryPitching == "1", "1", "0"), as.numeric(test_set$PitchPred))
 roc_train <- roc(ifelse(train_set$BinaryPitching == "1", "1", "0"), as.numeric(train_set$PitchPred))
@@ -154,6 +188,7 @@ plot(roc_test, col = "blue", main = "Pitching ROC Graph")
 lines(roc_train, col = "green")
 ```
 
+# I then created an attribute showing the difference between the ERA and ERAPred columns and ordered the new data set based on the difference between ERA and ERAPred.
 
 ```{r}
 ERA_Full_1 <- ERA_Full %>% mutate(ERA_Diff = ERA - ERAPred) %>% select(c(Name, BinaryPitching, ERA, ERAPred, ERA_Diff, SO, GB, FB, LD, BB, H, HR))
