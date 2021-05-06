@@ -87,8 +87,6 @@ ggplot(pitchingStats) +
   geom_smooth(aes(x = LD, y = ERA), method = "auto", level = 0.9, colour = "royal blue") +
   geom_smooth(aes(x = FB, y = ERA), method = "auto", level = 0.9, colour = "red") +
   labs(title = "Batted Balls to ERA Correlation", subtitle = "2019 MLB Season (100ip min)", x = "Number of Batted Balls", y = "ERA", colour = "Batted Balls")
-  
-  
 ```
 
 ```{r}
