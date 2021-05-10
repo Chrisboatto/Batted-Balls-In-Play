@@ -18,7 +18,7 @@ When you click the **Knit** button a document will be generated that includes bo
 # ERA is determined by the following formula: Earned Runs (ER) / Innings pitched (IP) * 9. And earned run is defined as any run that scores against a pitcher without the benefit of an error or a passed ball. Often, it is the judgment of the official scorer as to whether a specific run would've scored without the defensive mishap. Therefore runs that score with defensive mishaps will not be counted against the pitcher because he had no effect on the run scoring. 
 
 
-# THe following are the packages used to complete this assignment.
+# The following are the packages used to complete this assignment.
 
 ```{r}
 require(dplyr)
