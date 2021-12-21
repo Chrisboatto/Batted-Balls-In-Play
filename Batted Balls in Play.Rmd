@@ -26,11 +26,15 @@ require(stringr)
 require(rpart)
 require(corrplot)
 require(ggplot2)
+require(pROC)
+require(caret)
 library(dplyr)
 library(stringr)
 library(rpart)
 library(corrplot)
 library(ggplot2)
+library(pROC)
+library(caret)
 ```
 
 # I downloaded the data set off my GitHub profile into RStudio.
@@ -158,12 +162,12 @@ test_set <- cbind(test_set, ERA_test)
 ```
 
 ```{r}
-names(train_set)[names(train_set) == "ERA_train"] <- "PitchPred"
-names(test_set)[names(test_set) == "ERA_test"] <- "PitchPred"
+names(train_set)[names(train_set) == "ERA_train"] <- "ERAPred"
+names(test_set)[names(test_set) == "ERA_test"] <- "ERAPred"
 ```
 
 ```{r}
-PitchFull <- rbind(train_set, test_set)
+ERAFull <- rbind(train_set, test_set)
 ```
 
 # The new importance model shows a much more balanced model that used almost every attribute entered into it. 
@@ -182,8 +186,8 @@ ggplot(newImp, aes(Overall, row.names(newImp))) +
 # The Receiver Operator Characteristic Graph shows how well the model did at predicting. Although you would rather see a gradual curve on the chart, this still shows that the model predicted well with no under or over fitting.
 
 ```{r}
-roc_test <- roc(ifelse(test_set$BinaryPitching == "1", "1", "0"), as.numeric(test_set$PitchPred))
-roc_train <- roc(ifelse(train_set$BinaryPitching == "1", "1", "0"), as.numeric(train_set$PitchPred))
+roc_test <- roc(ifelse(test_set$BinaryPitching == "1", "1", "0"), as.numeric(test_set$ERAPred))
+roc_train <- roc(ifelse(train_set$BinaryPitching == "1", "1", "0"), as.numeric(train_set$ERAPred))
 plot(roc_test, col = "blue", main = "Pitching ROC Graph")
 lines(roc_train, col = "green")
 ```
@@ -191,10 +195,10 @@ lines(roc_train, col = "green")
 # I then created an attribute showing the difference between the ERA and ERAPred columns and ordered the new data set based on the difference between ERA and ERAPred.
 
 ```{r}
-ERA_Full_1 <- ERA_Full %>% mutate(ERA_Diff = ERA - ERAPred) %>% select(c(Name, BinaryPitching, ERA, ERAPred, ERA_Diff, SO, GB, FB, LD, BB, H, HR))
+ERA_Full_1 <- ERAFull %>% mutate(ERA_Diff = BinaryPitching - ERAPred) %>% select(c(Name, BinaryPitching, ERA, ERAPred, ERA_Diff, SO, GB, FB, LD, BB, H, HR))
 ```
 
 ```{r}
-ERA_Full_1[order(ERA_Full_1$ERA_Diff),]
+ERA_Full_1[order(-ERA_Full_1$ERA_Diff),]
 ```
 
