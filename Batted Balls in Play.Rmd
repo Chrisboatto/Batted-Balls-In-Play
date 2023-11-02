@@ -27,13 +27,15 @@ require(rpart)
 require(corrplot)
 require(ggplot2)
 require(pROC)
-require(caret)
+library(cli)
+install.packages("cli", repos = "https://cran.r-project.org")
 library(dplyr)
 library(stringr)
 library(rpart)
 library(corrplot)
 library(ggplot2)
 library(pROC)
+install.packages("https://cran.r-project.org/src/contrib/Archive/caret/caret_6.0-85.tar.gz", repos = NULL, type = "source")
 library(caret)
 ```
 
@@ -73,7 +75,7 @@ pitchingStats <- pitchingStats %>% filter(!is.na(vFA..pi.)) %>% filter(IP > 100)
 pitchingStats$LOB. <- as.numeric(sub("%", "", pitchingStats$LOB.))/100
 pitchingStats$GB. <- as.numeric(sub("%", "", pitchingStats$GB.))/100
 pitchingStats$HR.FB <- as.numeric(sub("%", "", pitchingStats$HR.FB))/100
-pitchingStats <- rename(pitchingStats, Name = ï..Name)
+#pitchingStats <- rename(pitchingStats, Name = ï..Name)
 ```
 
 ```{r}
