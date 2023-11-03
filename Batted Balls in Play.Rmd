@@ -197,10 +197,16 @@ lines(roc_train, col = "green")
 # I then created an attribute showing the difference between the ERA and ERAPred columns and ordered the new data set based on the difference between ERA and ERAPred.
 
 ```{r}
+ERAFull$ERAPred <- as.numeric(ERAFull$ERAPred)
+ERAFull$ERAPred <- ERAFull$ERAPred - 1
 ERA_Full_1 <- ERAFull %>% mutate(ERA_Diff = BinaryPitching - ERAPred) %>% select(c(Name, BinaryPitching, ERA, ERAPred, ERA_Diff, SO, GB, FB, LD, BB, H, HR))
 ```
 
 ```{r}
 ERA_Full_1[order(-ERA_Full_1$ERA_Diff),]
+```
+
+```{r}
+sum(ERA_Full_1$ERA_Diff)
 ```
 
